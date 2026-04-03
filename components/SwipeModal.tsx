@@ -13,9 +13,10 @@ interface SwipeModalProps {
   onClose: () => void;
   children: React.ReactNode;
   maxHeightPercent?: number;
+  minHeightPercent?: number;
 }
 
-export default function SwipeModal({ visible, onClose, children, maxHeightPercent = 90 }: SwipeModalProps) {
+export default function SwipeModal({ visible, onClose, children, maxHeightPercent = 90, minHeightPercent }: SwipeModalProps) {
   const translateY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
   // Use a ref so PanResponder always reads the current value (no stale closure)
   const keyboardVisibleRef = useRef(false);
@@ -109,7 +110,8 @@ export default function SwipeModal({ visible, onClose, children, maxHeightPercen
           <Animated.View
             style={[
               styles.sheet,
-              { maxHeight: `${maxHeightPercent}%` },
+              { maxHeight: SCREEN_HEIGHT * (maxHeightPercent / 100) },
+              minHeightPercent ? { minHeight: SCREEN_HEIGHT * (minHeightPercent / 100) } : undefined,
               { transform: [{ translateY }] },
             ]}
           >
@@ -155,6 +157,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.6)',
   },
   kavContainer: {
+    flex: 1,
     justifyContent: 'flex-end',
   },
   sheet: {
@@ -179,6 +182,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: Spacing.xxl,
     paddingBottom: Spacing.xl,
+    flexGrow: 1,
   },
   doneBar: {
     flexDirection: 'row',

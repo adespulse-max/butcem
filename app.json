@@ -4,14 +4,14 @@
     "slug": "BudgetApp",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/icon-v2.png",
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "scheme": "budgetapp",
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/splash-v2.png",
       "resizeMode": "contain",
-      "backgroundColor": "#070B1A"
+      "backgroundColor": "#000000"
     },
     "ios": {
       "supportsTablet": true,
@@ -19,14 +19,14 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#070B1A"
+        "foregroundImage": "./assets/adaptive-icon-v2.png",
+        "backgroundColor": "#000000"
       },
       "edgeToEdgeEnabled": true,
       "package": "com.budgetapp.butcem"
     },
     "web": {
-      "favicon": "./assets/favicon.png",
+      "favicon": "./assets/favicon-v2.png",
       "bundler": "metro"
     },
     "plugins": [

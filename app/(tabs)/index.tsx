@@ -506,7 +506,7 @@ export default function DashboardScreen() {
         })()}
       </SwipeModal>
       {/* Bildirimler Modal */}
-      <SwipeModal visible={activeModal === 'notifications'} onClose={() => setActiveModal(null)} maxHeightPercent={70}>
+      <SwipeModal visible={activeModal === 'notifications'} onClose={() => setActiveModal(null)} maxHeightPercent={85} minHeightPercent={55}>
         <View style={styles.modalHeaderRow}>
           <Ionicons name="notifications-outline" size={26} color={Colors.neonOrange} />
           <Text style={[styles.modalTitle, { marginTop: 0 }]}>Bildirimler</Text>

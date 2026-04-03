@@ -137,25 +137,27 @@ export function BudgetProvider({ children }: { children: ReactNode }) {
   }, [expenses]);
 
   const getNotifications = useCallback(() => {
-    const today = new Date().getDate();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
     return expenses
       .filter(e => e.reminderEnabled && !e.isPaid && e.dueDate)
       .map(e => {
-        const dueDay = parseInt(e.dueDate as string, 10);
-        if (isNaN(dueDay)) return null;
+        const due = new Date(e.dueDate!);
+        due.setHours(0, 0, 0, 0);
+
+        const diffTime = due.getTime() - today.getTime();
+        const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
 
         let status: 'overdue' | 'due_today' | 'upcoming' = 'upcoming';
-        let diff = dueDay - today;
-
-        if (diff < 0) status = 'overdue';
-        else if (diff === 0) status = 'due_today';
+        if (diffDays < 0) status = 'overdue';
+        else if (diffDays === 0) status = 'due_today';
         else status = 'upcoming';
 
-        return { ...e, dueStatus: status, diffDays: diff };
+        return { ...e, dueStatus: status, diffDays };
       })
-      .filter(Boolean)
-      .filter(e => e!.dueStatus !== 'upcoming' || e!.diffDays <= 3) // Sadece 3 gün kalmış veya geçmişler eklensin
-      .sort((a, b) => a!.diffDays - b!.diffDays) as (Expense & { dueStatus: 'overdue' | 'due_today' | 'upcoming'; diffDays: number })[];
+      .filter(e => e.dueStatus !== 'upcoming' || e.diffDays <= (e.reminderDaysBefore || 3))
+      .sort((a, b) => a.diffDays - b.diffDays) as (Expense & { dueStatus: 'overdue' | 'due_today' | 'upcoming'; diffDays: number })[];
   }, [expenses]);
 
   return (

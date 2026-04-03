@@ -25,6 +25,7 @@ export interface Expense {
   dueDate?: string;
   isPaid: boolean;
   reminderEnabled: boolean;
+  reminderDaysBefore?: number;
 }
 
 export interface AIInsight {

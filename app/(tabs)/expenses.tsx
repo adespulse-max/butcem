@@ -34,6 +34,7 @@ export default function ExpensesScreen() {
   const [frequency, setFrequency] = useState<typeof FREQUENCIES[number]>('monthly');
   const [dueDay, setDueDay] = useState('');
   const [reminder, setReminder] = useState(false);
+  const [reminderDays, setReminderDays] = useState('3');
 
   // Düzenleme
   const [showEditModal, setShowEditModal] = useState(false);
@@ -44,6 +45,7 @@ export default function ExpensesScreen() {
   const [editFrequency, setEditFrequency] = useState<typeof FREQUENCIES[number]>('monthly');
   const [editDueDay, setEditDueDay] = useState('');
   const [editReminder, setEditReminder] = useState(false);
+  const [editReminderDays, setEditReminderDays] = useState('3');
 
   // Numeric "Tamam" bar visibility
   const [showDoneBar, setShowDoneBar] = useState(false);
@@ -98,6 +100,7 @@ export default function ExpensesScreen() {
       dueDate,
       isPaid: false,
       reminderEnabled: reminder,
+      reminderDaysBefore: parseInt(reminderDays) || 3,
     });
     setTitle('');
     setAmount('');
@@ -105,10 +108,7 @@ export default function ExpensesScreen() {
     setFrequency('monthly');
     setDueDay('');
     setReminder(false);
-    setShowModal(false);
-    setCategory('market');
-    setFrequency('monthly');
-    setDueDay('');
+    setReminderDays('3');
     setShowModal(false);
   };
 
@@ -131,6 +131,7 @@ export default function ExpensesScreen() {
       setEditDueDay('');
     }
     setEditReminder(expense.reminderEnabled || false);
+    setEditReminderDays(expense.reminderDaysBefore?.toString() || '3');
     setShowEditModal(true);
   };
 
@@ -165,6 +166,7 @@ export default function ExpensesScreen() {
       frequency: editFrequency,
       dueDate,
       reminderEnabled: editReminder,
+      reminderDaysBefore: parseInt(editReminderDays) || 3,
     });
     setShowEditModal(false);
     setEditingExpense(null);
@@ -178,6 +180,7 @@ export default function ExpensesScreen() {
     setFormCategory: (v: string) => void, setFormFrequency: (v: typeof FREQUENCIES[number]) => void,
     setFormDueDay: (v: string) => void,
     formReminder: boolean, setFormReminder: (v: boolean) => void,
+    formReminderDays: string, setFormReminderDays: (v: string) => void,
     onSave: () => void,
   ) => (
     <>
@@ -268,6 +271,25 @@ export default function ExpensesScreen() {
         </View>
         <CustomSwitch enabled={formReminder} onToggle={() => setFormReminder(!formReminder)} activeColor={Colors.neonCyan} />
       </View>
+
+      {formReminder && (
+        <View style={[styles.inputGroup, { marginTop: -10 }]}>
+          <Text style={styles.inputLabel}>Kaç gün önceden haber verilsin?</Text>
+          <View style={styles.freqRow}>
+            {['1', '2', '3', '5', '7'].map(d => (
+              <TouchableOpacity
+                key={d}
+                style={[styles.freqBtn, formReminderDays === d && styles.freqBtnActive]}
+                onPress={() => { Keyboard.dismiss(); setFormReminderDays(d); }}
+              >
+                <Text style={[styles.freqBtnText, formReminderDays === d && styles.freqBtnTextActive]}>
+                  {d} Gün
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+      )}
 
       {showDoneBar && <NumericDoneBar />}
 
@@ -384,7 +406,7 @@ export default function ExpensesScreen() {
         {renderForm(
           false, title, amount, category, frequency, dueDay,
           setTitle, setAmount, setCategory, setFrequency, setDueDay,
-          reminder, setReminder, handleAdd,
+          reminder, setReminder, reminderDays, setReminderDays, handleAdd,
         )}
       </SwipeModal>
 
@@ -393,7 +415,7 @@ export default function ExpensesScreen() {
         {renderForm(
           true, editTitle, editAmount, editCategory, editFrequency, editDueDay,
           setEditTitle, setEditAmount, setEditCategory, setEditFrequency, setEditDueDay,
-          editReminder, setEditReminder, handleEdit,
+          editReminder, setEditReminder, editReminderDays, setEditReminderDays, handleEdit,
         )}
       </SwipeModal>
     </View>
