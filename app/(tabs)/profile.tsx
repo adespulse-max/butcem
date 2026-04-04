@@ -23,8 +23,10 @@ export default function ProfileScreen() {
   const { incomes, expenses, summary } = useBudget();
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const [aiEnabled, setAiEnabled] = useState(true);
+  // Ayarları user nesnesinden oku, yoksa varsayılan true kullan
+  const notificationsEnabled = user?.notificationsEnabled ?? true;
+  const aiEnabled = user?.aiEnabled ?? true;
+  
   const [currencyModalVisible, setCurrencyModalVisible] = useState(false);
 
   useEffect(() => {
@@ -41,6 +43,14 @@ export default function ProfileScreen() {
   const handleCurrencyChange = (symbol: string) => {
     updateProfile({ currency: symbol });
     setCurrencyModalVisible(false);
+  };
+
+  const toggleNotifications = () => {
+    updateProfile({ notificationsEnabled: !notificationsEnabled });
+  };
+
+  const toggleAi = () => {
+    updateProfile({ aiEnabled: !aiEnabled });
   };
 
   const memberSince = user?.createdAt
@@ -121,7 +131,7 @@ export default function ProfileScreen() {
             <TouchableOpacity
               style={styles.settingRow}
               activeOpacity={0.7}
-              onPress={() => setNotificationsEnabled(!notificationsEnabled)}
+              onPress={toggleNotifications}
             >
               <View style={styles.settingLeft}>
                 <View style={[styles.settingIconBg, { backgroundColor: Colors.neonOrange + '20' }]}>
@@ -136,7 +146,7 @@ export default function ProfileScreen() {
               </View>
               <CustomSwitch
                 enabled={notificationsEnabled}
-                onToggle={() => setNotificationsEnabled(!notificationsEnabled)}
+                onToggle={toggleNotifications}
                 activeColor={Colors.neonOrange}
               />
             </TouchableOpacity>
@@ -144,7 +154,7 @@ export default function ProfileScreen() {
             <TouchableOpacity
               style={styles.settingRow}
               activeOpacity={0.7}
-              onPress={() => setAiEnabled(!aiEnabled)}
+              onPress={toggleAi}
             >
               <View style={styles.settingLeft}>
                 <View style={[styles.settingIconBg, { backgroundColor: Colors.neonPurple + '20' }]}>
@@ -159,7 +169,7 @@ export default function ProfileScreen() {
               </View>
               <CustomSwitch
                 enabled={aiEnabled}
-                onToggle={() => setAiEnabled(!aiEnabled)}
+                onToggle={toggleAi}
                 activeColor={Colors.neonPurple}
               />
             </TouchableOpacity>

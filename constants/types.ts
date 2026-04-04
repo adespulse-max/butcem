@@ -4,6 +4,8 @@ export interface User {
   email: string;
   currency: string;
   createdAt: string;
+  aiEnabled?: boolean;
+  notificationsEnabled?: boolean;
 }
 
 export interface Income {

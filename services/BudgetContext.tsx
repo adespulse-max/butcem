@@ -137,6 +137,9 @@ export function BudgetProvider({ children }: { children: ReactNode }) {
   }, [expenses]);
 
   const getNotifications = useCallback(() => {
+    // Bildirimler kapalıysa boş dizi döndür
+    if (user?.notificationsEnabled === false) return [];
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
@@ -158,7 +161,7 @@ export function BudgetProvider({ children }: { children: ReactNode }) {
       })
       .filter(e => e.dueStatus !== 'upcoming' || e.diffDays <= (e.reminderDaysBefore || 3))
       .sort((a, b) => a.diffDays - b.diffDays) as (Expense & { dueStatus: 'overdue' | 'due_today' | 'upcoming'; diffDays: number })[];
-  }, [expenses]);
+  }, [expenses, user?.notificationsEnabled]);
 
   return (
     <BudgetContext.Provider

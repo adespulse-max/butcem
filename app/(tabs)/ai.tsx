@@ -1,22 +1,28 @@
 import React, { useRef, useEffect } from 'react';
 import {
-  View, Text, ScrollView, StyleSheet, Animated,
+  View, Text, ScrollView, StyleSheet, Animated, TouchableOpacity,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useBudget } from '../../services/BudgetContext';
+import { useAuth } from '../../services/AuthContext';
 import { Colors, FontSize, BorderRadius, Spacing, Shadow } from '../../constants/theme';
 import { generateInsights } from '../../services/AIEngine';
+import { useRouter } from 'expo-router';
 
 export default function AIScreen() {
+  const { user } = useAuth();
   const { summary, expenses, incomes } = useBudget();
   const fadeAnim = useRef(new Animated.Value(0)).current;
+  const router = useRouter();
+
+  const aiEnabled = user?.aiEnabled ?? true;
 
   useEffect(() => {
     Animated.timing(fadeAnim, { toValue: 1, duration: 600, useNativeDriver: true }).start();
   }, []);
 
-  const insights = generateInsights(summary, expenses, incomes);
+  const insights = aiEnabled ? generateInsights(summary, expenses, incomes) : [];
 
   const getTypeGradient = (type: string): [string, string] => {
     switch (type) {
@@ -58,87 +64,114 @@ export default function AIScreen() {
             <Text style={styles.subtitle}>Yapay zeka destekli bütçe analizi</Text>
           </View>
 
-          {/* AI Badge */}
-          <LinearGradient
-            colors={[Colors.gradientPurpleStart, '#4C1D95']}
-            style={styles.aiBanner}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-          >
-            <View style={styles.aiBannerDecor} />
-            <View style={styles.aiBannerContent}>
-              <View style={styles.aiIconBg}>
-                <Ionicons name="sparkles" size={24} color={Colors.neonPurple} />
-              </View>
-              <View style={styles.aiBannerText}>
-                <Text style={styles.aiBannerTitle}>BütçeM AI</Text>
-                <Text style={styles.aiBannerSubtitle}>
-                  {insights.length} öneri hazır
-                </Text>
-              </View>
-            </View>
-            <View style={styles.aiPulse}>
-              <View style={styles.aiPulseDot} />
-              <Text style={styles.aiPulseText}>Aktif</Text>
-            </View>
-          </LinearGradient>
-
-          {/* Insights List */}
-          {insights.map((insight, index) => (
-            <Animated.View
-              key={insight.id}
-              style={[
-                styles.insightCard,
-                {
-                  opacity: fadeAnim,
-                  transform: [{
-                    translateY: fadeAnim.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [20 * (index + 1), 0],
-                    }),
-                  }],
-                },
-              ]}
-            >
+          {!aiEnabled ? (
+            <View style={styles.disabledState}>
               <LinearGradient
-                colors={getTypeGradient(insight.type) as any}
-                style={[styles.insightGradient, { borderColor: getTypeBorder(insight.type) }]}
+                colors={[Colors.cardBg, Colors.cardBgLight]}
+                style={styles.disabledCard}
               >
-                <View style={styles.insightHeader}>
-                  <View style={[styles.insightIconBg, { backgroundColor: insight.color + '20' }]}>
-                    <Ionicons name={getTypeIcon(insight.type) as any} size={20} color={insight.color} />
+                <View style={styles.disabledIconBg}>
+                  <Ionicons name="sparkles-outline" size={48} color={Colors.textMuted} />
+                  <View style={styles.disabledSlash} />
+                </View>
+                <Text style={styles.disabledTitle}>AI Önerileri Kapalı</Text>
+                <Text style={styles.disabledText}>
+                  Kişiselleştirilmiş bütçe analizleri ve tasarruf önerileri almak için ayarlardan AI özelliğini aktif edebilirsiniz.
+                </Text>
+                <TouchableOpacity
+                  style={styles.enableBtn}
+                  onPress={() => router.push('/(tabs)/profile')}
+                >
+                  <Text style={styles.enableBtnText}>Ayarlara Git</Text>
+                  <Ionicons name="arrow-forward" size={18} color="#fff" />
+                </TouchableOpacity>
+              </LinearGradient>
+            </View>
+          ) : (
+            <>
+              {/* AI Badge */}
+              <LinearGradient
+                colors={[Colors.gradientPurpleStart, '#4C1D95']}
+                style={styles.aiBanner}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              >
+                <View style={styles.aiBannerDecor} />
+                <View style={styles.aiBannerContent}>
+                  <View style={styles.aiIconBg}>
+                    <Ionicons name="sparkles" size={24} color={Colors.neonPurple} />
                   </View>
-                  <View style={[styles.insightBadge, { backgroundColor: insight.color + '20' }]}>
-                    <Text style={[styles.insightBadgeText, { color: insight.color }]}>
-                      {insight.type === 'warning' ? 'Uyarı'
-                        : insight.type === 'saving' ? 'Tasarruf'
-                        : insight.type === 'achievement' ? 'Başarı'
-                        : 'İpucu'}
+                  <View style={styles.aiBannerText}>
+                    <Text style={styles.aiBannerTitle}>BütçeM AI</Text>
+                    <Text style={styles.aiBannerSubtitle}>
+                      {insights.length} öneri hazır
                     </Text>
                   </View>
                 </View>
-                <Text style={styles.insightTitle}>{insight.title}</Text>
-                <Text style={styles.insightDesc}>{insight.description}</Text>
-                {insight.amount !== undefined && (
-                  <View style={[styles.insightAmountBg, { backgroundColor: insight.color + '10' }]}>
-                    <Ionicons name="cash-outline" size={16} color={insight.color} />
-                    <Text style={[styles.insightAmount, { color: insight.color }]}>
-                      ₺{insight.amount.toLocaleString('tr-TR')}
-                    </Text>
-                  </View>
-                )}
+                <View style={styles.aiPulse}>
+                  <View style={styles.aiPulseDot} />
+                  <Text style={styles.aiPulseText}>Aktif</Text>
+                </View>
               </LinearGradient>
-            </Animated.View>
-          ))}
 
-          {insights.length === 0 && (
-            <View style={styles.emptyState}>
-              <Ionicons name="analytics-outline" size={48} color={Colors.textMuted} />
-              <Text style={styles.emptyTitle}>Analiz Bekleniyor</Text>
-              <Text style={styles.emptyText}>
-                Gelir ve gider verilerinizi eklediğinizde AI motorumuz size öneriler sunacak.
-              </Text>
-            </View>
+              {/* Insights List */}
+              {insights.map((insight, index) => (
+                <Animated.View
+                  key={insight.id}
+                  style={[
+                    styles.insightCard,
+                    {
+                      opacity: fadeAnim,
+                      transform: [{
+                        translateY: fadeAnim.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [20 * (index + 1), 0],
+                        }),
+                      }],
+                    },
+                  ]}
+                >
+                  <LinearGradient
+                    colors={getTypeGradient(insight.type) as any}
+                    style={[styles.insightGradient, { borderColor: getTypeBorder(insight.type) }]}
+                  >
+                    <View style={styles.insightHeader}>
+                      <View style={[styles.insightIconBg, { backgroundColor: insight.color + '20' }]}>
+                        <Ionicons name={getTypeIcon(insight.type) as any} size={20} color={insight.color} />
+                      </View>
+                      <View style={[styles.insightBadge, { backgroundColor: insight.color + '20' }]}>
+                        <Text style={[styles.insightBadgeText, { color: insight.color }]}>
+                          {insight.type === 'warning' ? 'Uyarı'
+                            : insight.type === 'saving' ? 'Tasarruf'
+                            : insight.type === 'achievement' ? 'Başarı'
+                            : 'İpucu'}
+                        </Text>
+                      </View>
+                    </View>
+                    <Text style={styles.insightTitle}>{insight.title}</Text>
+                    <Text style={styles.insightDesc}>{insight.description}</Text>
+                    {insight.amount !== undefined && (
+                      <View style={[styles.insightAmountBg, { backgroundColor: insight.color + '10' }]}>
+                        <Ionicons name="cash-outline" size={16} color={insight.color} />
+                        <Text style={[styles.insightAmount, { color: insight.color }]}>
+                          ₺{insight.amount.toLocaleString('tr-TR')}
+                        </Text>
+                      </View>
+                    )}
+                  </LinearGradient>
+                </Animated.View>
+              ))}
+
+              {insights.length === 0 && (
+                <View style={styles.emptyState}>
+                  <Ionicons name="analytics-outline" size={48} color={Colors.textMuted} />
+                  <Text style={styles.emptyTitle}>Analiz Bekleniyor</Text>
+                  <Text style={styles.emptyText}>
+                    Gelir ve gider verilerinizi eklediğinizde AI motorumuz size öneriler sunacak.
+                  </Text>
+                </View>
+              )}
+            </>
           )}
 
           <View style={{ height: 100 }} />
@@ -245,4 +278,30 @@ const styles = StyleSheet.create({
   },
   emptyTitle: { fontSize: FontSize.lg, fontWeight: '600', color: Colors.textSecondary },
   emptyText: { fontSize: FontSize.md, color: Colors.textMuted, textAlign: 'center', paddingHorizontal: 40 },
+  
+  // Disabled State
+  disabledState: { marginTop: Spacing.xl },
+  disabledCard: {
+    borderRadius: BorderRadius.xl, padding: Spacing.xxxl, alignItems: 'center',
+    borderWidth: 1, borderColor: Colors.border,
+  },
+  disabledIconBg: {
+    width: 80, height: 80, borderRadius: 40, backgroundColor: Colors.backgroundLight,
+    justifyContent: 'center', alignItems: 'center', marginBottom: Spacing.xl,
+  },
+  disabledSlash: {
+    position: 'absolute', width: 60, height: 2, backgroundColor: Colors.textMuted,
+    transform: [{ rotate: '-45deg' }],
+  },
+  disabledTitle: { fontSize: FontSize.xl, fontWeight: '700', color: Colors.textPrimary, marginBottom: Spacing.md },
+  disabledText: {
+    fontSize: FontSize.md, color: Colors.textSecondary, textAlign: 'center',
+    lineHeight: 24, marginBottom: Spacing.xxl,
+  },
+  enableBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: Spacing.sm,
+    backgroundColor: Colors.neonPurple, paddingHorizontal: 24, paddingVertical: 12,
+    borderRadius: BorderRadius.full, ...Shadow.neonPurple,
+  },
+  enableBtnText: { color: '#fff', fontSize: FontSize.md, fontWeight: '700' },
 });
