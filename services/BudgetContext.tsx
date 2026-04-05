@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode, useCa
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Income, Expense, BudgetSummary, FilterPeriod } from '../constants/types';
 import { useAuth } from './AuthContext';
+import { convertCurrency } from './AIEngine';
 
 interface BudgetContextType {
   incomes: Income[];
@@ -97,12 +98,22 @@ export function BudgetProvider({ children }: { children: ReactNode }) {
   };
 
   const summary: BudgetSummary = React.useMemo(() => {
+    const baseCurrency = user?.currency || '₺';
+
     const totalIncome = incomes
       .filter(i => i.isActive)
-      .reduce((sum, i) => sum + getMonthlyAmount(i.amount, i.frequency), 0);
+      .reduce((sum, i) => {
+        const monthly = getMonthlyAmount(i.amount, i.frequency);
+        const inBase = convertCurrency(monthly, i.currency || '₺', baseCurrency);
+        return sum + inBase;
+      }, 0);
 
     const totalExpenses = expenses
-      .reduce((sum, e) => sum + getMonthlyAmount(e.amount, e.frequency), 0);
+      .reduce((sum, e) => {
+        const monthly = getMonthlyAmount(e.amount, e.frequency);
+        const inBase = convertCurrency(monthly, e.currency || '₺', baseCurrency);
+        return sum + inBase;
+      }, 0);
 
     const balance = totalIncome - totalExpenses;
     const savingsRate = totalIncome > 0 ? (balance / totalIncome) * 100 : 0;
@@ -110,7 +121,8 @@ export function BudgetProvider({ children }: { children: ReactNode }) {
     const categoryMap = new Map<string, number>();
     expenses.forEach(e => {
       const monthly = getMonthlyAmount(e.amount, e.frequency);
-      categoryMap.set(e.category, (categoryMap.get(e.category) || 0) + monthly);
+      const inBase = convertCurrency(monthly, e.currency || '₺', baseCurrency);
+      categoryMap.set(e.category, (categoryMap.get(e.category) || 0) + inBase);
     });
 
     const categoryBreakdown = Array.from(categoryMap.entries())
@@ -122,7 +134,7 @@ export function BudgetProvider({ children }: { children: ReactNode }) {
       .sort((a, b) => b.amount - a.amount);
 
     return { totalIncome, totalExpenses, balance, savingsRate, categoryBreakdown };
-  }, [incomes, expenses]);
+  }, [incomes, expenses, user?.currency]);
 
   const getUpcomingPayments = useCallback((): Expense[] => {
     const now = new Date();

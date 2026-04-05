@@ -12,6 +12,7 @@ export interface Income {
   id: string;
   title: string;
   amount: number;
+  currency: string;
   frequency: 'daily' | 'weekly' | 'monthly' | 'yearly';
   date: string;
   isActive: boolean;
@@ -21,6 +22,7 @@ export interface Expense {
   id: string;
   title: string;
   amount: number;
+  currency: string;
   category: string;
   frequency: 'once' | 'daily' | 'weekly' | 'monthly' | 'yearly';
   date: string;

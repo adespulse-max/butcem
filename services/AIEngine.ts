@@ -1,6 +1,30 @@
 import { AIInsight, BudgetSummary, Expense, Income } from '../constants/types';
 import { Colors, CategoryIcons } from '../constants/theme';
 
+// Sabit kurlar (Baz: ₺)
+export const EXCHANGE_RATES: Record<string, number> = {
+  '₺': 1,
+  '$': 33.20, // 1$ = 33.20₺
+  '€': 36.10, // 1€ = 36.10₺
+  '£': 42.50, // 1£ = 42.50₺
+};
+
+/**
+ * Verilen bir tutarı, hedef para birimine çevirir.
+ * @param amount Çevrilecek tutar
+ * @param from Hangi birimden (₺, $, €, £)
+ * @param to Hangi birime (₺, $, €, £)
+ */
+export function convertCurrency(amount: number, from: string, to: string): number {
+  if (!from || !to || from === to) return amount;
+  
+  // Önce ₺'ye çevir (Base)
+  const amountInTRY = amount * (EXCHANGE_RATES[from] || 1);
+  
+  // Sonra hedef birime çevir
+  return amountInTRY / (EXCHANGE_RATES[to] || 1);
+}
+
 export function generateInsights(
   summary: BudgetSummary,
   expenses: Expense[],

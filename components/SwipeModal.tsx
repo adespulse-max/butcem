@@ -18,8 +18,6 @@ interface SwipeModalProps {
 
 export default function SwipeModal({ visible, onClose, children, maxHeightPercent = 90, minHeightPercent }: SwipeModalProps) {
   const translateY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
-  // Use a ref so PanResponder always reads the current value (no stale closure)
-  const keyboardVisibleRef = useRef(false);
 
   useEffect(() => {
     if (visible) {
@@ -34,52 +32,25 @@ export default function SwipeModal({ visible, onClose, children, maxHeightPercen
     }
   }, [visible]);
 
-  useEffect(() => {
-    const showSub = Keyboard.addListener(
-      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
-      () => { keyboardVisibleRef.current = true; }
-    );
-    const hideSub = Keyboard.addListener(
-      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
-      () => { keyboardVisibleRef.current = false; }
-    );
-    return () => {
-      showSub.remove();
-      hideSub.remove();
-    };
-  }, []);
-
   const closeModal = useCallback(() => {
     Keyboard.dismiss();
     Animated.timing(translateY, {
       toValue: SCREEN_HEIGHT,
-      duration: 250,
+      duration: 200,
       useNativeDriver: true,
     }).start(() => onClose());
   }, [onClose]);
 
-  // PanResponder ONLY on the drag handle area — not the entire sheet
   const handlePanResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: (_, gs) => {
-        // Only capture downward swipes on the handle
-        return gs.dy > 5 && Math.abs(gs.dy) > Math.abs(gs.dx);
-      },
+      onMoveShouldSetPanResponder: (_, gs) => gs.dy > 5,
       onPanResponderMove: (_, gs) => {
-        if (gs.dy > 0) {
-          translateY.setValue(gs.dy);
-        }
+        if (gs.dy > 0) translateY.setValue(gs.dy);
       },
       onPanResponderRelease: (_, gs) => {
-        if (gs.dy > 80 || gs.vy > 0.5) {
-          // Dismiss keyboard first, then close
-          Keyboard.dismiss();
-          Animated.timing(translateY, {
-            toValue: SCREEN_HEIGHT,
-            duration: 250,
-            useNativeDriver: true,
-          }).start(() => onClose());
+        if (gs.dy > 100 || gs.vy > 0.5) {
+          closeModal();
         } else {
           Animated.spring(translateY, {
             toValue: 0,
@@ -97,15 +68,13 @@ export default function SwipeModal({ visible, onClose, children, maxHeightPercen
   return (
     <Modal visible={visible} animationType="none" transparent onRequestClose={closeModal}>
       <View style={styles.overlay}>
-        {/* Backdrop */}
         <TouchableWithoutFeedback onPress={closeModal}>
           <View style={styles.backdrop} />
         </TouchableWithoutFeedback>
 
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          style={styles.kavContainer}
-          keyboardVerticalOffset={0}
+          style={styles.kav}
         >
           <Animated.View
             style={[
@@ -115,13 +84,13 @@ export default function SwipeModal({ visible, onClose, children, maxHeightPercen
               { transform: [{ translateY }] },
             ]}
           >
-            {/* Drag handle — PanResponder ONLY here */}
+            {/* Handle area for swiping */}
             <View style={styles.handleContainer} {...handlePanResponder.panHandlers}>
               <View style={styles.handle} />
             </View>
 
             <ScrollView
-              keyboardShouldPersistTaps="handled"
+              keyboardShouldPersistTaps="always" // CHANGED: Essential for button clicks while keyboard is up
               showsVerticalScrollIndicator={false}
               bounces={false}
               contentContainerStyle={styles.scrollContent}
@@ -135,12 +104,10 @@ export default function SwipeModal({ visible, onClose, children, maxHeightPercen
   );
 }
 
-/** A "Tamam" toolbar to dismiss keyboard for numeric inputs */
 export function NumericDoneBar() {
   return (
     <View style={styles.doneBar}>
-      <View style={{ flex: 1 }} />
-      <TouchableOpacity onPress={Keyboard.dismiss} style={styles.doneBtn} activeOpacity={0.7}>
+      <TouchableOpacity onPress={() => Keyboard.dismiss()} style={styles.doneBtn} activeOpacity={0.7}>
         <Text style={styles.doneText}>Tamam</Text>
       </TouchableOpacity>
     </View>
@@ -148,60 +115,30 @@ export function NumericDoneBar() {
 }
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    justifyContent: 'flex-end',
-  },
-  backdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-  },
-  kavContainer: {
-    flex: 1,
-    justifyContent: 'flex-end',
-  },
+  overlay: { flex: 1, justifyContent: 'flex-end' },
+  backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.7)' },
+  kav: { flex: 1, justifyContent: 'flex-end' },
   sheet: {
     backgroundColor: Colors.backgroundLight,
     borderTopLeftRadius: BorderRadius.xxl,
     borderTopRightRadius: BorderRadius.xxl,
-    paddingBottom: Platform.OS === 'ios' ? 34 : Spacing.xxl,
+    overflow: 'hidden',
   },
-  handleContainer: {
-    alignItems: 'center',
-    paddingTop: 12,
-    paddingBottom: 12,
-    // Larger touch target for swiping
-    minHeight: 28,
-  },
-  handle: {
-    width: 40,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: Colors.textMuted,
-  },
-  scrollContent: {
-    paddingHorizontal: Spacing.xxl,
-    paddingBottom: Spacing.xl,
-    flexGrow: 1,
-  },
+  handleContainer: { alignItems: 'center', paddingVertical: 15 },
+  handle: { width: 40, height: 5, borderRadius: 2.5, backgroundColor: Colors.textMuted + '50' },
+  scrollContent: { paddingHorizontal: Spacing.xl, paddingBottom: 40 },
   doneBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    backgroundColor: Colors.backgroundLight,
+    backgroundColor: Colors.cardBg,
+    padding: 10,
     borderTopWidth: 1,
     borderTopColor: Colors.border,
+    alignItems: 'flex-end',
   },
   doneBtn: {
-    paddingHorizontal: 16,
-    paddingVertical: 6,
-    borderRadius: 8,
-    backgroundColor: Colors.neonPurple + '25',
+    backgroundColor: Colors.neonPurple + '20',
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    borderRadius: BorderRadius.md,
   },
-  doneText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: Colors.neonPurple,
-  },
+  doneText: { color: Colors.neonPurple, fontWeight: '700' },
 });
